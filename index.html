@@ -1,0 +1,740 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>March Madness Bracket Contest</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --orange: #F4600C;
+    --orange-light: #FF8240;
+    --orange-dim: rgba(244,96,12,0.12);
+    --gold: #F5C842;
+    --court: #C8955A;
+    --court-dark: #8B5E2E;
+    --bg: #0D0D0F;
+    --bg2: #151518;
+    --bg3: #1C1C21;
+    --border: rgba(255,255,255,0.08);
+    --text: #F0EDE8;
+    --muted: #7A7870;
+    --green: #3DD68C;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* COURT TEXTURE BACKGROUND */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      repeating-linear-gradient(90deg, rgba(200,149,90,0.03) 0px, rgba(200,149,90,0.03) 1px, transparent 1px, transparent 80px),
+      repeating-linear-gradient(0deg, rgba(200,149,90,0.03) 0px, rgba(200,149,90,0.03) 1px, transparent 1px, transparent 80px);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrap { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 0 20px 60px; }
+
+  /* HEADER */
+  header {
+    padding: 48px 0 36px;
+    text-align: center;
+    position: relative;
+  }
+  .header-year {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 6px;
+    color: var(--orange);
+    margin-bottom: 8px;
+  }
+  header h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(52px, 10vw, 96px);
+    line-height: 0.9;
+    letter-spacing: 2px;
+    background: linear-gradient(160deg, #fff 30%, var(--court) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .header-sub {
+    font-size: 13px;
+    letter-spacing: 4px;
+    color: var(--muted);
+    margin-top: 10px;
+    text-transform: uppercase;
+  }
+  .header-line {
+    width: 60px; height: 2px;
+    background: var(--orange);
+    margin: 20px auto 0;
+  }
+
+  /* STANDINGS PODIUM */
+  .standings-section { margin-bottom: 40px; }
+  .section-label {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 5px;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .podium { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+
+  .podium-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px 20px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s, border-color 0.2s;
+    cursor: default;
+  }
+  .podium-card:hover { transform: translateY(-3px); }
+  .podium-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+  }
+  .podium-card.rank-1 { border-color: rgba(245,200,66,0.3); }
+  .podium-card.rank-1::before { background: var(--gold); }
+  .podium-card.rank-2 { border-color: rgba(180,180,190,0.3); }
+  .podium-card.rank-2::before { background: #B4B4BE; }
+  .podium-card.rank-3::before { background: var(--court); }
+
+  .rank-badge {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-bottom: 12px;
+  }
+  .rank-1 .rank-badge { color: var(--gold); }
+  .rank-2 .rank-badge { color: #B4B4BE; }
+  .rank-3 .rank-badge { color: var(--court); }
+
+  .player-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 1px;
+    line-height: 1;
+    margin-bottom: 16px;
+    color: #fff;
+  }
+  .total-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 52px;
+    line-height: 1;
+    color: var(--orange);
+  }
+  .rank-1 .total-score { color: var(--gold); }
+  .score-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    margin-top: 4px;
+  }
+  .correct-count {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .correct-count span { color: var(--green); font-weight: 600; }
+
+  /* TABS */
+  .tabs {
+    display: flex;
+    gap: 4px;
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 4px;
+    margin-bottom: 24px;
+  }
+  .tab-btn {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--muted);
+    transition: all 0.2s;
+  }
+  .tab-btn.active {
+    background: var(--bg3);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+
+  /* ROUND BREAKDOWN TABLE */
+  .breakdown-table {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .breakdown-table table { width: 100%; border-collapse: collapse; }
+  .breakdown-table th {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--muted);
+    padding: 14px 20px;
+    text-align: left;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .breakdown-table th.center { text-align: center; }
+  .breakdown-table td {
+    padding: 14px 20px;
+    font-size: 14px;
+    border-bottom: 1px solid var(--border);
+  }
+  .breakdown-table tr:last-child td { border-bottom: none; }
+  .breakdown-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .round-name { font-weight: 500; }
+  .multiplier {
+    display: inline-block;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 13px;
+    letter-spacing: 1px;
+    background: var(--orange-dim);
+    color: var(--orange-light);
+    border-radius: 6px;
+    padding: 2px 8px;
+  }
+  .pts-cell { text-align: center; font-weight: 600; }
+  .pts-cell.best { color: var(--gold); }
+
+  /* ENTRY PANEL */
+  .entry-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; }
+
+  .entry-card {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .entry-card-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg3);
+  }
+  .entry-card-header .name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 20px;
+    letter-spacing: 1px;
+  }
+  .entry-card-header .pts {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--orange);
+  }
+  .entry-card-body { padding: 16px 20px; }
+
+  .pick-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+  }
+  .pick-row:last-child { border-bottom: none; }
+  .pick-seed {
+    width: 24px; height: 24px;
+    border-radius: 6px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px;
+    font-weight: 600;
+    flex-shrink: 0;
+    color: var(--muted);
+  }
+  .pick-team { flex: 1; font-weight: 500; }
+  .pick-round { font-size: 11px; color: var(--muted); }
+  .pick-pts {
+    font-weight: 600;
+    font-size: 13px;
+    min-width: 40px;
+    text-align: right;
+  }
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .status-dot.win { background: var(--green); }
+  .status-dot.loss { background: #E05252; }
+  .status-dot.pending { background: var(--muted); }
+
+  /* ADD PICK FORM */
+  .add-pick-form {
+    padding: 16px 20px;
+    border-top: 1px solid var(--border);
+    background: var(--bg3);
+  }
+  .form-row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .form-field { display: flex; flex-direction: column; gap: 4px; }
+  .form-field label { font-size: 11px; letter-spacing: 2px; color: var(--muted); text-transform: uppercase; }
+  .form-field input, .form-field select {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    padding: 8px 10px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .form-field input:focus, .form-field select:focus { border-color: var(--orange); }
+  .form-field select option { background: #1C1C21; }
+  .form-field.team { flex: 1; min-width: 120px; }
+  .form-field.seed { width: 68px; }
+  .form-field.round { width: 140px; }
+  .form-field.status { width: 110px; }
+
+  .add-btn {
+    align-self: flex-end;
+    padding: 9px 18px;
+    background: var(--orange);
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, transform 0.1s;
+    white-space: nowrap;
+  }
+  .add-btn:hover { background: var(--orange-light); }
+  .add-btn:active { transform: scale(0.97); }
+
+  /* MANAGE PLAYERS */
+  .manage-section {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    margin-bottom: 24px;
+  }
+  .manage-section h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+    color: var(--text);
+  }
+  .player-manage-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .player-manage-row input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none;
+    flex: 1;
+    transition: border-color 0.2s;
+  }
+  .player-manage-row input:focus { border-color: var(--orange); }
+  .del-btn {
+    padding: 10px 14px;
+    background: transparent;
+    border: 1px solid rgba(224,82,82,0.3);
+    border-radius: 8px;
+    color: #E05252;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .del-btn:hover { background: rgba(224,82,82,0.1); }
+  .add-player-row { display: flex; gap: 8px; margin-top: 14px; }
+  .add-player-row input {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    outline: none;
+    flex: 1;
+    transition: border-color 0.2s;
+  }
+  .add-player-row input:focus { border-color: var(--orange); }
+  .add-player-btn {
+    padding: 10px 18px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .add-player-btn:hover { border-color: var(--orange); color: var(--orange); }
+
+  /* SCORING GUIDE */
+  .scoring-guide {
+    background: var(--bg2);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+  }
+  .scoring-guide h3 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+  .formula-box {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 16px 20px;
+    margin-bottom: 16px;
+    font-size: 15px;
+    text-align: center;
+    letter-spacing: 1px;
+  }
+  .formula-box strong { color: var(--orange); }
+  .round-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+  .round-pill {
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 13px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+  .round-pill .rname { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+  .round-pill .rval { font-family: 'Bebas Neue', sans-serif; font-size: 18px; color: var(--orange); }
+
+  .hidden { display: none; }
+
+  @media (max-width: 600px) {
+    .podium { grid-template-columns: 1fr; }
+    .total-score { font-size: 40px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="header-year">2025</div>
+    <h1>March<br>Madness</h1>
+    <div class="header-sub">Bracket Contest</div>
+    <div class="header-line"></div>
+  </header>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <button class="tab-btn active" onclick="showTab('standings')">Standings</button>
+    <button class="tab-btn" onclick="showTab('picks')">Enter Picks</button>
+    <button class="tab-btn" onclick="showTab('scoring')">Scoring Guide</button>
+  </div>
+
+  <!-- STANDINGS TAB -->
+  <div id="tab-standings">
+    <p class="section-label">Leaderboard</p>
+    <div class="podium" id="podium"></div>
+
+    <br>
+    <p class="section-label" style="margin-top:8px">Round Breakdown</p>
+    <div class="breakdown-table">
+      <table>
+        <thead>
+          <tr>
+            <th>Round</th>
+            <th>Multiplier</th>
+            <th class="center" id="bh-0">—</th>
+            <th class="center" id="bh-1">—</th>
+            <th class="center" id="bh-2">—</th>
+          </tr>
+        </thead>
+        <tbody id="breakdown-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- PICKS TAB -->
+  <div id="tab-picks" class="hidden">
+    <div class="manage-section">
+      <h3>Players</h3>
+      <div id="player-manage-list"></div>
+      <div class="add-player-row">
+        <input type="text" id="new-player-input" placeholder="Add player name…" onkeydown="if(event.key==='Enter')addPlayer()">
+        <button class="add-player-btn" onclick="addPlayer()">+ Add Player</button>
+      </div>
+    </div>
+
+    <div class="entry-grid" id="entry-grid"></div>
+  </div>
+
+  <!-- SCORING TAB -->
+  <div id="tab-scoring" class="hidden">
+    <div class="scoring-guide">
+      <h3>How Points Work</h3>
+      <div class="formula-box">
+        Points = <strong>Round Multiplier</strong> + <strong>Seed of Winning Team</strong>
+      </div>
+      <p style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.7">
+        Every correct pick earns the round multiplier plus the seed of the team you picked to win. Higher seeds = bigger upsets = more points. A 16-seed Cinderella run is worth massive points!
+      </p>
+      <div class="round-pills">
+        <div class="round-pill"><span class="rname">Round of 64</span><span class="rval">×1 + seed</span></div>
+        <div class="round-pill"><span class="rname">Round of 32</span><span class="rval">×2 + seed</span></div>
+        <div class="round-pill"><span class="rname">Sweet 16</span><span class="rval">×4 + seed</span></div>
+        <div class="round-pill"><span class="rname">Elite 8</span><span class="rval">×8 + seed</span></div>
+        <div class="round-pill"><span class="rname">Final Four</span><span class="rval">×16 + seed</span></div>
+        <div class="round-pill"><span class="rname">Championship</span><span class="rval">×32 + seed</span></div>
+      </div>
+      <br>
+      <p style="font-size:13px;color:var(--muted);line-height:1.7">
+        <strong style="color:var(--text)">Example:</strong> You pick a #12 seed to win in the Round of 64 and they do — that's 1 + 12 = <strong style="color:var(--orange)">13 pts</strong>. 
+        Same #12 seed advances and wins the Round of 32 — 2 + 12 = <strong style="color:var(--orange)">14 pts</strong>.
+        Compare to a boring #1 seed win in the Championship: 32 + 1 = <strong style="color:var(--orange)">33 pts</strong> vs a #5 seed: 32 + 5 = <strong style="color:var(--orange)">37 pts</strong>.
+      </p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const ROUNDS = [
+  { name: 'Round of 64',    short: 'R64',  mult: 1  },
+  { name: 'Round of 32',    short: 'R32',  mult: 2  },
+  { name: 'Sweet 16',       short: 'S16',  mult: 4  },
+  { name: 'Elite 8',        short: 'E8',   mult: 8  },
+  { name: 'Final Four',     short: 'FF',   mult: 16 },
+  { name: 'Championship',   short: 'CHMP', mult: 32 },
+];
+
+let state = JSON.parse(localStorage.getItem('mm2025') || 'null') || {
+  players: ['Player 1', 'Player 2', 'Player 3'],
+  picks: {} // { playerName: [ {team, seed, round, status} ] }
+};
+
+function save() { localStorage.setItem('mm2025', JSON.stringify(state)); }
+
+function calcPts(pick) {
+  if (pick.status !== 'win') return 0;
+  const r = ROUNDS.find(r => r.name === pick.round);
+  if (!r) return 0;
+  return r.mult + parseInt(pick.seed);
+}
+
+function playerStats(name) {
+  const picks = state.picks[name] || [];
+  const total = picks.reduce((s, p) => s + calcPts(p), 0);
+  const correct = picks.filter(p => p.status === 'win').length;
+  const byRound = {};
+  ROUNDS.forEach(r => {
+    const rPicks = picks.filter(p => p.round === r.name);
+    byRound[r.name] = rPicks.reduce((s, p) => s + calcPts(p), 0);
+  });
+  return { total, correct, byRound };
+}
+
+function renderStandings() {
+  const stats = state.players.map(n => ({ name: n, ...playerStats(n) }));
+  stats.sort((a, b) => b.total - a.total);
+
+  const podium = document.getElementById('podium');
+  podium.innerHTML = stats.map((s, i) => `
+    <div class="podium-card rank-${i+1}">
+      <div class="rank-badge">${['🥇 1ST','🥈 2ND','🥉 3RD'][i] || `${i+1}TH`}</div>
+      <div class="player-name">${s.name}</div>
+      <div class="total-score">${s.total}</div>
+      <div class="score-label">POINTS</div>
+      <div class="correct-count"><span>${s.correct}</span> correct picks</div>
+    </div>
+  `).join('');
+
+  // Headers
+  stats.forEach((s, i) => {
+    const el = document.getElementById('bh-' + i);
+    if (el) el.textContent = s.name;
+  });
+
+  // Breakdown rows
+  const tbody = document.getElementById('breakdown-body');
+  tbody.innerHTML = ROUNDS.map(r => {
+    const cells = stats.map((s, i) => {
+      const pts = s.byRound[r.name] || 0;
+      const best = pts > 0 && pts === Math.max(...stats.map(x => x.byRound[r.name] || 0));
+      return `<td class="pts-cell${best ? ' best' : ''}">${pts || '—'}</td>`;
+    }).join('');
+    return `<tr>
+      <td class="round-name">${r.name}</td>
+      <td><span class="multiplier">×${r.mult}</span></td>
+      ${cells}
+    </tr>`;
+  }).join('');
+}
+
+function renderPicksTab() {
+  // Player manage list
+  const ml = document.getElementById('player-manage-list');
+  ml.innerHTML = state.players.map((p, i) => `
+    <div class="player-manage-row">
+      <input type="text" value="${p}" onchange="renamePlayer(${i}, this.value)" />
+      <button class="del-btn" onclick="deletePlayer(${i})">✕</button>
+    </div>
+  `).join('');
+
+  // Entry cards
+  const grid = document.getElementById('entry-grid');
+  grid.innerHTML = state.players.map(player => {
+    const picks = state.picks[player] || [];
+    const total = picks.reduce((s, p) => s + calcPts(p), 0);
+    const pickRows = picks.map((pk, idx) => {
+      const pts = calcPts(pk);
+      return `
+        <div class="pick-row">
+          <div class="status-dot ${pk.status}"></div>
+          <div class="pick-seed">${pk.seed}</div>
+          <div class="pick-team">${pk.team}</div>
+          <div class="pick-round">${ROUNDS.find(r=>r.name===pk.round)?.short||''}</div>
+          <div class="pick-pts" style="color:${pk.status==='win'?'var(--green)':pk.status==='loss'?'#E05252':'var(--muted)'}">${pk.status==='win'?'+'+pts:pk.status==='loss'?'0':'?'}</div>
+          <button onclick="removePick('${player}',${idx})" style="background:none;border:none;color:var(--muted);cursor:pointer;font-size:12px;padding:0 2px">✕</button>
+        </div>`;
+    }).join('');
+
+    return `
+      <div class="entry-card">
+        <div class="entry-card-header">
+          <span class="name">${player}</span>
+          <span class="pts">${total} pts</span>
+        </div>
+        <div class="entry-card-body">
+          ${picks.length === 0 ? '<p style="font-size:13px;color:var(--muted);padding:8px 0">No picks yet.</p>' : pickRows}
+        </div>
+        <div class="add-pick-form">
+          <div class="form-row" id="form-${player.replace(/\s/g,'_')}">
+            <div class="form-field team">
+              <label>Team</label>
+              <input type="text" placeholder="e.g. Duke" id="inp-team-${player.replace(/\s/g,'_')}">
+            </div>
+            <div class="form-field seed">
+              <label>Seed</label>
+              <input type="number" min="1" max="16" placeholder="1–16" id="inp-seed-${player.replace(/\s/g,'_')}">
+            </div>
+            <div class="form-field round">
+              <label>Round</label>
+              <select id="inp-round-${player.replace(/\s/g,'_')}">
+                ${ROUNDS.map(r=>`<option>${r.name}</option>`).join('')}
+              </select>
+            </div>
+            <div class="form-field status">
+              <label>Result</label>
+              <select id="inp-status-${player.replace(/\s/g,'_')}">
+                <option value="pending">Pending</option>
+                <option value="win">Win ✓</option>
+                <option value="loss">Loss ✗</option>
+              </select>
+            </div>
+            <button class="add-btn" onclick="addPick('${player}')">Add</button>
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+function addPick(player) {
+  const key = player.replace(/\s/g,'_');
+  const team = document.getElementById('inp-team-'+key).value.trim();
+  const seed = parseInt(document.getElementById('inp-seed-'+key).value);
+  const round = document.getElementById('inp-round-'+key).value;
+  const status = document.getElementById('inp-status-'+key).value;
+  if (!team || !seed || seed < 1 || seed > 16) return;
+  if (!state.picks[player]) state.picks[player] = [];
+  state.picks[player].push({ team, seed, round, status });
+  save(); renderAll();
+}
+
+function removePick(player, idx) {
+  state.picks[player].splice(idx, 1);
+  save(); renderAll();
+}
+
+function renamePlayer(i, newName) {
+  const old = state.players[i];
+  state.players[i] = newName;
+  if (state.picks[old]) { state.picks[newName] = state.picks[old]; delete state.picks[old]; }
+  save(); renderAll();
+}
+
+function deletePlayer(i) {
+  const name = state.players[i];
+  if (!confirm(`Remove ${name} and all their picks?`)) return;
+  delete state.picks[name];
+  state.players.splice(i, 1);
+  save(); renderAll();
+}
+
+function addPlayer() {
+  const inp = document.getElementById('new-player-input');
+  const name = inp.value.trim();
+  if (!name || state.players.includes(name)) return;
+  state.players.push(name);
+  inp.value = '';
+  save(); renderAll();
+}
+
+function renderAll() { renderStandings(); renderPicksTab(); }
+
+function showTab(tab) {
+  ['standings','picks','scoring'].forEach(t => {
+    document.getElementById('tab-'+t).classList.toggle('hidden', t !== tab);
+  });
+  document.querySelectorAll('.tab-btn').forEach((btn, i) => {
+    btn.classList.toggle('active', ['standings','picks','scoring'][i] === tab);
+  });
+}
+
+renderAll();
+</script>
+</body>
+</html>
